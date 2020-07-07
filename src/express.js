@@ -11,7 +11,7 @@ function createApplication() {
     let { pathname } = url.parse(req.url)
     for (let i = 0; i < app.routes.length; i++) {
       const { method, path, handler } = app.routes[i]
-      if (req_method === method && path === pathname) {
+      if ((req_method === method || method === 'all') && (path === pathname || path === '*')) {
         handler(req, res)
       }
     }
@@ -19,15 +19,25 @@ function createApplication() {
   }
 
   app.routes = []
-
-  app.get = function (path, handler) {
+  app.all = function (path, handler) {
     let layer = {
-      method: 'get',
+      method: 'all',
       path,
       handler,
     }
     app.routes.push(layer)
   }
+  http.METHODS.forEach((method) => {
+    method = method.toLowerCase()
+    app[method] = function (path, handler) {
+      let layer = {
+        method,
+        path,
+        handler,
+      }
+      app.routes.push(layer)
+    }
+  })
 
   app.listen = function () {
     let server = http.createServer(app)
